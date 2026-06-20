@@ -1,0 +1,32 @@
+{
+  "name": "fraude-code",
+  "version": "0.0.0-fraudulent",
+  "description": "A deadpan parody coding-agent CLI",
+  "type": "module",
+  "bin": {
+    "fraude": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "BACKEND_REQUIREMENTS.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "rm -rf .test-dist && tsc -p tsconfig.test.json && node --test .test-dist/test/*.test.js",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "ink": "7.1.0",
+    "react": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "ink-testing-library": "4.0.0",
+    "typescript": "^5.9.0"
+  }
+}
