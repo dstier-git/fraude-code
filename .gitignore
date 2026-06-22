@@ -4,6 +4,15 @@ dist/
 *.log
 .DS_Store
 
+# Local-only notes and scratch files
+USER-ONLY.md
+hi.py
+script.py
+reverse.py
+opencode.json
+.fraude/
+.claude/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
