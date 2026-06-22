@@ -96,7 +96,6 @@ export function App({
       ...messages,
       {role: 'user', content: prompt},
     ];
-    setMessages(requestMessages);
     setFeed((items) => [...items, {id: id('user'), kind: 'user', text: prompt}]);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -117,7 +116,7 @@ export function App({
     }).then(({text, usage}) => {
       if (usage) setContextLeft(contextPercentage(model.contextWindow, usage));
       if (text) {
-        setMessages((items) => [...items, {role: 'assistant', content: text}]);
+        setMessages([...requestMessages, {role: 'assistant', content: text}]);
         setFeed((items) => [
           ...items,
           {id: id('assistant'), kind: 'assistant', text},
@@ -127,12 +126,16 @@ export function App({
       const partial = activeText(error);
       if (controller.signal.aborted) {
         if (partial) {
-          setMessages((items) => [...items, {role: 'assistant', content: partial}]);
+          setMessages([
+            ...requestMessages,
+            {role: 'assistant', content: partial},
+          ]);
           setFeed((items) => [
             ...items,
             {id: id('assistant'), kind: 'assistant', text: partial, interrupted: true},
           ]);
         } else {
+          setMessages(requestMessages);
           setFeed((items) => [
             ...items,
             {id: id('error'), kind: 'error', text: 'Generation interrupted.'},
@@ -240,11 +243,9 @@ function Cover({model, cwd, width}: {model: ModelInfo; cwd: string; width: numbe
       <Text color="white">{BANNER}</Text>
       <Text dimColor>{CODE_BANNER}</Text>
       <Box marginTop={1} flexDirection="column">
-        <Text><Text color="red">✻</Text> Welcome to Fraude Code!</Text>
+        <Text><Text color="red">✻</Text> Welcome to Fraude Code, a satirical AI coding harness designed to maximize agent hallucination. Not affiliated with, endorsed by, or sponsored by Anthropic, Claude, or Claude Code.</Text>
         <Text> </Text>
-        <Text dimColor>  v0.0.0-fraudulent</Text>
-        <Text dimColor>  the first AI coding harness designed to</Text>
-        <Text dimColor>  maximize hallucination</Text>
+        <Text dimColor>  v0.0.0.0.0.1-fraudulent</Text>
         <Text> </Text>
         <Text wrap="truncate"><Text dimColor>  cwd:   </Text><Text color="blue">{cwd}</Text></Text>
         <Text wrap="truncate"><Text dimColor>  model: </Text>{model.id}</Text>

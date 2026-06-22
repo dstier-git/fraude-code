@@ -10,7 +10,7 @@ configuration.
 ## Connection
 
 - The frontend reads `FRAUDE_API_BASE_URL`, defaulting to
-  `http://127.0.0.1:8080`.
+  `http://127.0.0.1:8000`.
 - The frontend reads `FRAUDE_CONTEXT_WINDOW` as the effective context limit,
   defaulting to `32768`. Server metadata takes precedence when available.
 - If `FRAUDE_API_KEY` is set, every request includes
@@ -79,8 +79,9 @@ Accept: text/event-stream
 ```
 
 Only `user` and `assistant` text messages are sent in v1. The frontend does not
-send tool definitions and does not render tool calls. The backend must therefore
-produce assistant text rather than `tool_calls` deltas.
+send tool definitions and does not render tool calls. The Python gateway owns
+the MCP agent loop and must therefore produce assistant text rather than
+`tool_calls` deltas.
 
 The response must be `text/event-stream`. Text reaches the frontend in
 `choices[0].delta.content`:
@@ -110,6 +111,9 @@ blank line. The terminal marker `data: [DONE]` completes the turn.
 Incremental token reporting is **TBD**. The frontend displays `— tokens` while
 generation is active and uses exact usage only after the backend provides it.
 No estimate is fabricated by the frontend.
+
+The v1 Python gateway buffers model/tool rounds before emitting the final text
+as SSE chunks. The frontend spinner remains active while those rounds run.
 
 ## 3. Cancellation
 
@@ -143,7 +147,31 @@ data: {"error":{"message":"Generation failed","type":"server_error"}}
 message as a transcript error and restores prompt input. Transport failures are
 handled the same way.
 
-## Running the local Qwen model
+## Running a local model and gateway
+
+### GPT-OSS through the Harmony server
+
+GPT-OSS requires official Harmony rendering and parsing. Start the repo-owned
+non-streaming model server with arm64 Python:
+
+Do not substitute `mlx_lm.server` for this command; the stock server does not
+parse GPT-OSS Harmony actions.
+
+```bash
+uv run --python /usr/local/bin/python3.12 \
+  --project backend --extra harmony \
+  python backend/harmony_server.py \
+  --model mlx-community/gpt-oss-20b-MXFP4-Q8 \
+  --host 127.0.0.1 --port 8080 \
+  --max-tokens 512 --reasoning-effort medium
+```
+
+Then start the gateway and UI with
+`FRAUDE_MODEL=mlx-community/gpt-oss-20b-MXFP4-Q8`. Set
+`FRAUDE_MODEL_API_BASE_URL` when the model server is not at
+`http://127.0.0.1:8080`.
+
+### Qwen through the stock MLX server
 
 Start the stock MLX server:
 
@@ -153,9 +181,21 @@ mlx_lm.server \
   --port 8080
 ```
 
-Then start Fraude Code with an explicit model selection. The 32K context is an
-operational limit for the local memory budget; it is intentionally below the
-model configuration's theoretical 262K maximum:
+Start the Python gateway in a second terminal. It launches the filesystem MCP
+server over stdio, exposes only the configured model, and serves the frontend
+API on port 8000. `FRAUDE_MODEL` takes precedence over legacy `QWEN_MODEL`;
+both default to the non-DWQ Qwen model shown below:
+
+```bash
+uv run --project backend uvicorn app:app \
+  --app-dir backend \
+  --host 127.0.0.1 \
+  --port 8000
+```
+
+Then start Fraude Code in a third terminal. The 32K context is an operational
+limit for the local memory budget; it is intentionally below the model
+configuration's theoretical 262K maximum:
 
 ```bash
 FRAUDE_MODEL=mlx-community/Qwen3-Coder-30B-A3B-Instruct-4bit \

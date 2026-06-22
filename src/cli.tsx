@@ -8,7 +8,7 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
   process.stderr.write('Fraude Code requires an interactive TTY.\n');
   process.exitCode = 1;
 } else {
-  const baseUrl = process.env.FRAUDE_API_BASE_URL ?? 'http://127.0.0.1:8080';
+  const baseUrl = process.env.FRAUDE_API_BASE_URL ?? 'http://127.0.0.1:8000';
   const apiKey = process.env.FRAUDE_API_KEY;
   const contextWindow = parseContextWindow(process.env.FRAUDE_CONTEXT_WINDOW);
   if (contextWindow === undefined) {

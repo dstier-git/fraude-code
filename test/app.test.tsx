@@ -35,7 +35,7 @@ test('renders the frame-one cover at supported widths', async () => {
     );
     await settle();
     const frame = view.lastFrame() ?? '';
-    assert.match(frame, /Welcome to Fraude Code!/);
+    assert.match(frame, /Welcome to Fraude Code,/);
     assert.match(frame, /fraude-test-model/);
     assert.match(frame, /\/tmp\/project/);
     assert.match(frame, /context left: 100%/);
@@ -87,7 +87,7 @@ test('streams a response and sends ordered conversation history', async () => {
     {role: 'assistant', content: 'Confidently wrong.'},
     {role: 'user', content: 'second prompt'},
   ]);
-  assert.equal((allFrames(view.frames).match(/Welcome to Fraude Code!/g) ?? []).length > 0, true);
+  assert.equal((allFrames(view.frames).match(/Welcome to Fraude Code,/g) ?? []).length > 0, true);
   view.unmount();
 });
 
@@ -115,6 +115,32 @@ test('preserves partial output when Escape cancels generation', async () => {
   const output = allFrames(view.frames);
   assert.match(output, /Partial answer/);
   assert.match(output, /interrupted/);
+  view.unmount();
+});
+
+test('does not carry failed prompts into later model context', async () => {
+  const backend = new FakeBackend();
+  backend.responses = [
+    [{type: 'error', message: 'malformed tool call'}],
+    [
+      {type: 'text_delta', text: 'Hello!'},
+      {type: 'completed'},
+    ],
+  ];
+  const view = render(<App backend={backend} columns={88} />);
+  await settle();
+
+  view.stdin.write('write a file');
+  view.stdin.write('\r');
+  await settle(180);
+  view.stdin.write('hi');
+  view.stdin.write('\r');
+  await settle(180);
+
+  assert.equal(backend.requests.length, 2);
+  assert.deepEqual(backend.requests[1]?.messages, [
+    {role: 'user', content: 'hi'},
+  ]);
   view.unmount();
 });
 
