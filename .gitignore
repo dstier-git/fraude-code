@@ -12,6 +12,7 @@ reverse.py
 opencode.json
 .fraude/
 .claude/
+mockup/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
